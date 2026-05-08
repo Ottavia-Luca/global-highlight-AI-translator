@@ -20,9 +20,8 @@ env/
 *.swo
 *~
 
-# Project data
-data/cache.db
-data/*.db
+# Project data (auto-generated at runtime)
+data/
 
 # OS
 .DS_Store
@@ -36,7 +35,6 @@ htmlcov/
 
 # Environment
 .env
-.env.local
 
 # Logs
 *.log

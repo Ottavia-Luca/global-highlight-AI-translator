@@ -1,143 +1,90 @@
 import os
-import yaml
 from pathlib import Path
 from PyQt6.QtCore import QFileSystemWatcher, QObject, pyqtSignal
-
-DEFAULT_CONFIG = {
-    "api": {
-        "url": "https://api.deepseek.com/v1/chat/completions",
-        "key": "",
-        "model": "deepseek-v4-flash",
-        "timeout": 10,
-        "max_tokens": 512,
-    },
-    "translation": {
-        "auto_detect": True,
-        "fallback_source": "en",
-        "fallback_target": "zh",
-    },
-    "system_prompt": "你是一个翻译助手。翻译用户输入的文本。\n",
-    "hotkeys": {"toggle": "Ctrl+Shift+F8"},
-    "cache": {"max_entries": 10000, "ttl_days": 30},
-    "ui": {
-        "icon_size": 24,
-        "float_window_width": 360,
-        "float_window_max_height": 240,
-        "hover_delay": 200,
-    },
-}
-
-
-def _deep_get(d, *keys, default=None):
-    for k in keys:
-        if isinstance(d, dict):
-            d = d.get(k, {})
-        else:
-            return default
-    return d if d != {} else default
 
 
 class Config(QObject):
     changed = pyqtSignal()
 
-    def __init__(self, config_path=None):
+    def __init__(self):
         super().__init__()
-        if config_path is None:
-            config_path = Path(__file__).parent.parent / "config.yaml"
-        self._path = str(config_path)
-        self._data = {}
-        self._load()
+        self._env = {}
+        self._load_env()
         self._setup_watcher()
 
-    def _load(self):
-        try:
-            with open(self._path, "r", encoding="utf-8") as f:
-                self._data = yaml.safe_load(f) or {}
-        except FileNotFoundError:
-            self._data = {}
+    def _load_env(self):
+        self._env.clear()
+        env_path = Path(__file__).parent.parent / ".env"
+        if env_path.exists():
+            with open(env_path, "r", encoding="utf-8") as f:
+                for line in f:
+                    line = line.strip()
+                    if not line or line.startswith("#") or "=" not in line:
+                        continue
+                    k, v = line.split("=", 1)
+                    self._env[k.strip()] = v.strip().strip("\"'")
 
-    def _get(self, *keys, default=None):
-        val = _deep_get(self._data, *keys)
-        if val is not None:
-            return val
-        return _deep_get(DEFAULT_CONFIG, *keys, default=default)
-
-    def reload(self):
-        """手动重新加载配置（用于无事件循环环境）"""
-        self._load()
+    def _get(self, key, default=""):
+        return self._env.get(key, default)
 
     def _setup_watcher(self):
+        env_path = str(Path(__file__).parent.parent / ".env")
         self._watcher = QFileSystemWatcher()
-        if os.path.exists(self._path):
-            self._watcher.addPath(self._path)
+        if os.path.exists(env_path):
+            self._watcher.addPath(env_path)
         self._watcher.fileChanged.connect(self._on_file_changed)
 
     def _on_file_changed(self, path):
-        self._load()
+        self._load_env()
         self.changed.emit()
-        if os.path.exists(self._path):
-            self._watcher.addPath(self._path)
+        if os.path.exists(path):
+            self._watcher.addPath(path)
 
     @property
     def api_url(self):
-        return self._get("api", "url")
+        return self._get("DEEPSEEK_API_URL", "https://api.deepseek.com/v1/chat/completions")
 
     @property
     def api_key(self):
-        return self._get("api", "key")
+        return self._get("DEEPSEEK_API_KEY")
 
     @property
     def api_model(self):
-        return self._get("api", "model")
+        return self._get("DEEPSEEK_API_MODEL", "deepseek-v4-flash")
 
     @property
     def api_timeout(self):
-        return self._get("api", "timeout")
+        return int(self._get("DEEPSEEK_API_TIMEOUT", "10"))
 
     @property
     def api_max_tokens(self):
-        return self._get("api", "max_tokens")
-
-    @property
-    def auto_detect(self):
-        return self._get("translation", "auto_detect")
-
-    @property
-    def fallback_source(self):
-        return self._get("translation", "fallback_source")
-
-    @property
-    def fallback_target(self):
-        return self._get("translation", "fallback_target")
+        return int(self._get("DEEPSEEK_API_MAX_TOKENS", "512"))
 
     @property
     def system_prompt(self):
-        return self._get("system_prompt")
-
-    @property
-    def toggle_hotkey(self):
-        return self._get("hotkeys", "toggle")
+        return self._get("DEEPSEEK_SYSTEM_PROMPT",
+            "你是翻译助手。英文翻译成中文，中文翻译成英文。专有名词缩写按\"全称是 XXX（YYY）\"输出。简洁输出。\n")
 
     @property
     def cache_max_entries(self):
-        return self._get("cache", "max_entries")
+        return int(self._get("DEEPSEEK_CACHE_MAX_ENTRIES", "10000"))
 
     @property
     def cache_ttl_days(self):
-        return self._get("cache", "ttl_days")
+        return int(self._get("DEEPSEEK_CACHE_TTL_DAYS", "30"))
 
     @property
     def icon_size(self):
-        return self._get("ui", "icon_size")
+        return int(self._get("DEEPSEEK_UI_ICON_SIZE", "24"))
 
     @property
     def float_window_width(self):
-        return self._get("ui", "float_window_width")
+        return int(self._get("DEEPSEEK_UI_FLOAT_WINDOW_WIDTH", "250"))
 
     @property
     def float_window_max_height(self):
-        return self._get("ui", "float_window_max_height")
+        return int(self._get("DEEPSEEK_UI_FLOAT_WINDOW_MAX_HEIGHT", "320"))
 
     @property
     def hover_delay(self):
-        return self._get("ui", "hover_delay")
+        return int(self._get("DEEPSEEK_UI_HOVER_DELAY", "200"))

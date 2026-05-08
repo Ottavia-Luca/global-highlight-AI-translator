@@ -1,7 +1,10 @@
 import json
 import asyncio
 import aiohttp
+import logging
 from PyQt6.QtCore import QThread, pyqtSignal
+
+_log = logging.getLogger("translator")
 
 
 class TranslatorService(QThread):
@@ -19,41 +22,80 @@ class TranslatorService(QThread):
         self._max_tokens = max_tokens
         self._pending_text = None
         self._loop = None
+        self._text_event = None
+        self._quit_flag = False
+        self.start()
 
     def translate(self, text):
         self._pending_text = text
-        if not self.isRunning():
-            self.start()
+        try:
+            if self._text_event and self._loop:
+                self._loop.call_soon_threadsafe(self._text_event.set)
+        except Exception:
+            pass
 
     def run(self):
         self._loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self._loop)
-        while self._pending_text is not None:
-            text = self._pending_text
-            self._pending_text = None
-            self._loop.run_until_complete(self._do_translate(text))
+        self._text_event = asyncio.Event()
+        self._loop.run_until_complete(self._run_loop())
 
-    async def _do_translate(self, text):
-        payload, headers = self._build_payload(text)
+    async def _run_loop(self):
+        connector = aiohttp.TCPConnector(limit=1, keepalive_timeout=30)
         timeout = aiohttp.ClientTimeout(total=self._timeout)
+        async with aiohttp.ClientSession(timeout=timeout, connector=connector) as session:
+            await self._warmup(session)
+            # 预热期间可能已有文字排队
+            if self._pending_text:
+                text = self._pending_text
+                self._pending_text = None
+                if text:
+                    await self._do_translate(session, text)
+            while not self._quit_flag:
+                await self._text_event.wait()
+                self._text_event.clear()
+                if self._quit_flag:
+                    break
+                text = self._pending_text
+                self._pending_text = None
+                if text:
+                    await self._do_translate(session, text)
+
+    async def _warmup(self, session):
+        if not self._api_key:
+            return
         try:
-            async with aiohttp.ClientSession(timeout=timeout) as session:
-                async with session.post(
-                    self._api_url, json=payload, headers=headers
-                ) as resp:
-                    if resp.status != 200:
-                        if resp.status in (429, 500, 502, 503):
-                            self.translation_error.emit(f"HTTP {resp.status}")
-                        return
-                    full_text = ""
-                    async for line in resp.content:
-                        decoded = line.decode("utf-8").strip()
-                        token = self._parse_sse_line(decoded)
-                        if token:
-                            full_text += token
-                            self.token_received.emit(token)
-                    if full_text:
-                        self.translation_done.emit(full_text)
+            _log.info("预热 API 连接...")
+            payload, headers = self._build_payload("Hi")
+            async with session.post(
+                self._api_url, json=payload, headers=headers
+            ) as resp:
+                if resp.status == 200:
+                    async for _ in resp.content:
+                        break
+            _log.info("预热完成")
+        except Exception:
+            _log.info("预热跳过（网络不可达）")
+
+    async def _do_translate(self, session, text):
+        payload, headers = self._build_payload(text)
+        try:
+            async with session.post(
+                self._api_url, json=payload, headers=headers
+            ) as resp:
+                if resp.status != 200:
+                    if resp.status in (429, 500, 502, 503):
+                        self.translation_error.emit(f"HTTP {resp.status}")
+                    return
+                full_text = ""
+                async for line in resp.content:
+                    decoded = line.decode("utf-8").strip()
+                    token = self._parse_sse_line(decoded)
+                    if token:
+                        full_text += token
+                        self.token_received.emit(token)
+                if full_text:
+                    self.translation_done.emit(full_text)
         except (asyncio.TimeoutError, aiohttp.ClientError):
             self.translation_error.emit("network_error")
 
@@ -84,3 +126,9 @@ class TranslatorService(QThread):
             return obj["choices"][0]["delta"].get("content", "")
         except (json.JSONDecodeError, KeyError, IndexError):
             return None
+
+    def stop(self):
+        self._quit_flag = True
+        if self._text_event and self._loop:
+            self._loop.call_soon_threadsafe(self._text_event.set)
+        self.wait()

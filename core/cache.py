@@ -84,4 +84,5 @@ class TranslationCache:
         ).fetchall()
 
     def close(self):
+        self._conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")
         self._conn.close()
