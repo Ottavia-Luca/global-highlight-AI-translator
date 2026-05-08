@@ -16,7 +16,7 @@ Windows 全局划词 AI 翻译工具 — 任意位置选中文字，光标旁弹
 Windows，Python 3.10+。
 
 ```bash
-git clone <repo-url>
+git clone https://github.com/Ottavia-Luca/global-highlight-AI-translator.git
 cd global-highlight-AI-translator
 python -m venv venv
 venv\Scripts\activate
