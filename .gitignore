@@ -1,4 +1,42 @@
+# Python
 __pycache__/
-*.pyc
-data/cache.db
+*.py[cod]
+*.so
 *.egg-info/
+dist/
+build/
+*.egg
+.eggs/
+
+# Virtual environment
+venv/
+.venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Project data
+data/cache.db
+data/*.db
+
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# pytest
+.pytest_cache/
+htmlcov/
+.coverage
+
+# Environment
+.env
+.env.local
+
+# Logs
+*.log
