@@ -12,9 +12,9 @@ build/
 venv/
 .venv/
 env/
-
 # IDE
 .vscode/
+.claude/
 .idea/
 *.swp
 *.swo
