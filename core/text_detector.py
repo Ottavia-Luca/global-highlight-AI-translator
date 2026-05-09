@@ -1,4 +1,5 @@
 import re
+import time
 import ctypes
 import logging
 from ctypes import wintypes, CFUNCTYPE, POINTER, Structure, c_int
@@ -47,6 +48,14 @@ def _mouse_hook_callback(nCode, wParam, lParam):
             dy = p.pt.y - inst._mouse_down_pos[1]
             if abs(dx) > 5 or abs(dy) > 5:
                 inst._selection_detected = True
+            else:
+                now = time.time()
+                if now - inst._last_up_time < 0.5:
+                    dist = abs(p.pt.x - inst._last_up_pos[0]) + abs(p.pt.y - inst._last_up_pos[1])
+                    if dist < 20:
+                        inst._selection_detected = True
+                inst._last_up_time = now
+                inst._last_up_pos = (p.pt.x, p.pt.y)
             inst._mouse_down_valid = False
     return user32.CallNextHookEx(None, nCode, wParam, lParam)
 
@@ -59,6 +68,8 @@ class TextDetector(QObject):
         self._enabled = True
         self._mouse_down_pos = (0, 0)
         self._mouse_down_valid = False
+        self._last_up_time = 0.0
+        self._last_up_pos = (0, 0)
         self._selection_detected = False
         self._hook_handle = None
         self._poll_timer = QTimer(self)
