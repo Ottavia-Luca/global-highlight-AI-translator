@@ -74,18 +74,25 @@ class TranslationCache:
     def get_bookmarks(self, limit=500, date=None):
         if date:
             rows = self._conn.execute(
-                "SELECT source_text, translated_text, created_at "
+                "SELECT id, source_text, translated_text, created_at "
                 "FROM bookmarks WHERE date(created_at) = ? "
                 "ORDER BY created_at DESC LIMIT ?",
                 (date, limit),
             ).fetchall()
         else:
             rows = self._conn.execute(
-                "SELECT source_text, translated_text, created_at "
+                "SELECT id, source_text, translated_text, created_at "
                 "FROM bookmarks ORDER BY created_at DESC LIMIT ?",
                 (limit,),
             ).fetchall()
         return rows
+
+    def delete_bookmark(self, bookmark_id):
+        self._conn.execute(
+            "DELETE FROM bookmarks WHERE id = ?",
+            (bookmark_id,),
+        )
+        self._conn.commit()
 
     def get_bookmark_dates(self):
         return [
