@@ -23,6 +23,20 @@ class SettingsDialog(QDialog):
         self.setWindowFlags(
             self.windowFlags() & ~Qt.WindowType.WindowContextHelpButtonHint
         )
+        self.setStyleSheet(
+            "QDialog { background: #1c234a; }"
+            "QLabel { color: #e8eaf8; }"
+            "QLineEdit, QPlainTextEdit, QSpinBox {"
+            " background: #161e40; color: #e8eaf8;"
+            " border: 1px solid #4e5ab8; border-radius: 4px;"
+            " padding: 4px 6px; }"
+            "QLineEdit:focus, QPlainTextEdit:focus, QSpinBox:focus {"
+            " border-color: #6976e4; }"
+            "QSpinBox::up-button, QSpinBox::down-button {"
+            " background: #222c56; border: none; width: 16px; }"
+            "QSpinBox::up-arrow, QSpinBox::down-arrow {"
+            " width: 8px; height: 8px; }"
+        )
 
         layout = QVBoxLayout(self)
         layout.setSpacing(12)
@@ -66,12 +80,20 @@ class SettingsDialog(QDialog):
         btn_layout.addWidget(exit_btn)
         btn_layout.addStretch()
         cancel_btn = QPushButton("取消")
+        cancel_btn.setStyleSheet(
+            "QPushButton { background: #222c56; color: #c0c4f0; "
+            "border: 1px solid #4e5ab8; border-radius: 6px; "
+            "padding: 6px 16px; }"
+            "QPushButton:hover { background: #2e3a6e; "
+            "border-color: #6976e4; }"
+        )
         cancel_btn.clicked.connect(self.reject)
         btn_layout.addWidget(cancel_btn)
         apply_btn = QPushButton("应用")
         apply_btn.setStyleSheet(
-            "QPushButton { background: #89b4fa; color: #1e1e2e; "
+            "QPushButton { background: #6976e4; color: #ffffff; "
             "border: none; border-radius: 6px; padding: 6px 20px; }"
+            "QPushButton:hover { background: #5a67d4; }"
         )
         apply_btn.clicked.connect(self._apply)
         btn_layout.addWidget(apply_btn)
