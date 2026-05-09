@@ -66,3 +66,10 @@ python main.py
 │   └── bookmarks_dialog.py # 收藏夹窗口
 └── assets/                 # 图标资源（启动时自动生成）
 ```
+
+## 反馈
+
+遇到 Bug 或有功能建议，欢迎到 [Issues](https://github.com/Ottavia-Luca/global-highlight-AI-translator/issues) 提交。
+
+
+

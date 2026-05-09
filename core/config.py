@@ -79,7 +79,7 @@ class Config(QObject):
 
     @property
     def float_window_width(self):
-        return int(self._get("DEEPSEEK_UI_FLOAT_WINDOW_WIDTH", "250"))
+        return int(self._get("DEEPSEEK_UI_FLOAT_WINDOW_WIDTH", "300"))
 
     @property
     def float_window_max_height(self):

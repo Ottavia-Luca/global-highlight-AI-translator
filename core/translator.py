@@ -28,10 +28,12 @@ class TranslatorService(QThread):
         self._text_event = None
         self._translate_task = None
         self._quit_flag = False
+        self._cancelled = False
         self.start()
 
     def translate(self, text):
         self._pending_text = text
+        self._cancelled = False
         try:
             if self._text_event and self._loop:
                 self._loop.call_soon_threadsafe(self._text_event.set)
@@ -69,6 +71,9 @@ class TranslatorService(QThread):
         return text
 
     async def _run_translate(self, session, text):
+        if self._cancelled:
+            _log.info("[取消] 翻译在启动前被丢弃")
+            return
         self._translate_task = asyncio.create_task(self._do_translate(session, text))
         try:
             await self._translate_task
@@ -103,8 +108,7 @@ class TranslatorService(QThread):
                 self._api_url, json=payload, headers=headers
             ) as resp:
                 if resp.status != 200:
-                    if resp.status in (429, 500, 502, 503):
-                        self.translation_error.emit(f"HTTP {resp.status}")
+                    self.translation_error.emit(f"HTTP {resp.status}")
                     return
                 full_text = ""
                 async for line in resp.content:
@@ -119,6 +123,7 @@ class TranslatorService(QThread):
             self.translation_error.emit("network_error")
 
     def cancel(self):
+        self._cancelled = True
         had_pending = self._pending_text is not None
         self._pending_text = None
         task = self._translate_task

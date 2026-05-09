@@ -11,7 +11,7 @@ from core.win32_utils import (
     VK_LBUTTON, user32,
 )
 
-FLOAT_WIDTH = 250
+FLOAT_WIDTH = 300
 FLOAT_MIN_HEIGHT = 66
 FLOAT_MAX_HEIGHT = 320
 STYLE = """
