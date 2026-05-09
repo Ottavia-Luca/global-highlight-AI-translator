@@ -5,6 +5,7 @@ from PyQt6.QtCore import QObject, pyqtSignal
 
 class TrayManager(QObject):
     toggle_requested = pyqtSignal()
+    bookmarks_requested = pyqtSignal()
     settings_requested = pyqtSignal()
     exit_requested = pyqtSignal()
 
@@ -28,6 +29,12 @@ class TrayManager(QObject):
         self._toggle_action = QAction("关闭" if self._enabled else "开启")
         self._toggle_action.triggered.connect(self._on_toggle)
         menu.addAction(self._toggle_action)
+
+        self._bookmarks_action = QAction("收藏夹")
+        self._bookmarks_action.triggered.connect(self.bookmarks_requested.emit)
+        menu.addAction(self._bookmarks_action)
+
+        menu.addSeparator()
 
         self._settings_action = QAction("设置...")
         self._settings_action.triggered.connect(self.settings_requested.emit)

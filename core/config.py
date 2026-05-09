@@ -42,7 +42,9 @@ class Config(QObject):
 
     @property
     def api_url(self):
-        return self._get("DEEPSEEK_API_URL", "https://api.deepseek.com/v1/chat/completions")
+        return self._get(
+            "DEEPSEEK_API_URL", "https://api.deepseek.com/v1/chat/completions"
+        )
 
     @property
     def api_key(self):
@@ -62,16 +64,14 @@ class Config(QObject):
 
     @property
     def system_prompt(self):
-        return self._get("DEEPSEEK_SYSTEM_PROMPT",
-            "你是翻译助手。英文翻译成中文，中文翻译成英文。专有名词缩写按\"全称是 XXX（YYY）\"输出。简洁输出。\n")
+        return self._get(
+            "DEEPSEEK_SYSTEM_PROMPT",
+            '你是翻译助手。英文翻译成中文，中文翻译成英文。专有名词缩写按"全称是 XXX（YYY）"输出。简洁输出。',
+        )
 
     @property
     def cache_max_entries(self):
         return int(self._get("DEEPSEEK_CACHE_MAX_ENTRIES", "10000"))
-
-    @property
-    def cache_ttl_days(self):
-        return int(self._get("DEEPSEEK_CACHE_TTL_DAYS", "30"))
 
     @property
     def icon_size(self):

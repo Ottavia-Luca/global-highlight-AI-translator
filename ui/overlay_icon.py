@@ -1,27 +1,15 @@
-import ctypes
 from PyQt6.QtWidgets import QWidget, QLabel, QVBoxLayout, QApplication
 from PyQt6.QtCore import Qt, QTimer, pyqtSignal, QPoint
 from PyQt6.QtGui import QPixmap, QCursor
 
-GWL_EXSTYLE = -20
-WS_EX_NOACTIVATE = 0x08000000
-WS_EX_TOOLWINDOW = 0x00000080
-WS_EX_TOPMOST = 0x00000008
-
-VK_LBUTTON = 0x01
-
-user32 = ctypes.windll.user32
-user32.GetAsyncKeyState.argtypes = [ctypes.c_int]
-user32.GetAsyncKeyState.restype = ctypes.c_short
-user32.GetWindowLongW.argtypes = [ctypes.c_void_p, ctypes.c_int]
-user32.GetWindowLongW.restype = ctypes.c_long
-user32.SetWindowLongW.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.c_long]
-user32.SetWindowLongW.restype = ctypes.c_long
+from core.win32_utils import (
+    GWL_EXSTYLE, WS_EX_NOACTIVATE, WS_EX_TOOLWINDOW, WS_EX_TOPMOST,
+    VK_LBUTTON, user32,
+)
 
 
 class OverlayIcon(QWidget):
     hovered = pyqtSignal()
-    leave = pyqtSignal()
 
     def __init__(self, icon_path, icon_size=24, hover_delay=200):
         super().__init__()
@@ -95,7 +83,6 @@ class OverlayIcon(QWidget):
     def leaveEvent(self, event):
         self.setStyleSheet("")
         self._hover_timer.stop()
-        self.leave.emit()
 
     def _check_click_outside(self):
         pressed = bool(user32.GetAsyncKeyState(VK_LBUTTON) & 0x8000)

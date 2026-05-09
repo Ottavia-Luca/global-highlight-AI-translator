@@ -30,6 +30,7 @@ from ui.overlay_icon import OverlayIcon
 from ui.float_window import FloatWindow
 from ui.tray import TrayManager
 from ui.settings_dialog import SettingsDialog
+from ui.bookmarks_dialog import BookmarksDialog
 
 ASSETS_DIR = Path(__file__).parent / "assets"
 
@@ -55,7 +56,6 @@ def main():
     config = Config()
     cache = TranslationCache(
         max_entries=config.cache_max_entries,
-        ttl_days=config.cache_ttl_days,
     )
     translator = TranslatorService(
         api_url=config.api_url,
@@ -148,20 +148,21 @@ def main():
     tray.toggle_requested.connect(on_toggle)
 
     float_win.bookmark_requested.connect(
-        lambda s, t: log.info("[收藏] %s → %s", s[:60], t[:60])
+        lambda s, t: cache.save_bookmark(s, t)
     )
 
     def on_settings():
         dlg = SettingsDialog(config)
         dlg.exit_requested.connect(on_exit)
         dlg.exec()
-        translator._api_key = config.api_key
-        translator._model = config.api_model
-        translator._system_prompt = config.system_prompt
-        cache._max_entries = config.cache_max_entries
-        cache._ttl_days = config.cache_ttl_days
 
     tray.settings_requested.connect(on_settings)
+
+    def on_bookmarks():
+        dlg = BookmarksDialog(cache)
+        dlg.exec()
+
+    tray.bookmarks_requested.connect(on_bookmarks)
 
     def on_exit():
         app.quit()
@@ -173,7 +174,6 @@ def main():
         translator._model = config.api_model
         translator._system_prompt = config.system_prompt
         cache._max_entries = config.cache_max_entries
-        cache._ttl_days = config.cache_ttl_days
 
     config.changed.connect(on_config_changed)
 

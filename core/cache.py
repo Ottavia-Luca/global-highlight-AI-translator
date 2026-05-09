@@ -1,6 +1,6 @@
 import sqlite3
 import os
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
 
 
@@ -21,12 +21,11 @@ CREATE TABLE IF NOT EXISTS bookmarks (
 
 
 class TranslationCache:
-    def __init__(self, db_path=None, max_entries=10000, ttl_days=30):
+    def __init__(self, db_path=None, max_entries=10000):
         if db_path is None:
             db_path = Path(__file__).parent.parent / "data" / "cache.db"
         self._db_path = str(db_path)
         self._max_entries = max_entries
-        self._ttl_days = ttl_days
         os.makedirs(os.path.dirname(self._db_path), exist_ok=True)
         self._conn = sqlite3.connect(self._db_path, check_same_thread=False)
         self._conn.execute("PRAGMA journal_mode=WAL")
@@ -63,11 +62,7 @@ class TranslationCache:
                 "(SELECT source_text FROM translations ORDER BY created_at ASC LIMIT ?)",
                 (excess,),
             )
-        cutoff = (datetime.now() - timedelta(days=self._ttl_days)).isoformat()
-        self._conn.execute(
-            "DELETE FROM translations WHERE created_at < ?", (cutoff,)
-        )
-        self._conn.commit()
+            self._conn.commit()
 
     def save_bookmark(self, source_text, translated_text):
         self._conn.execute(
@@ -76,12 +71,30 @@ class TranslationCache:
         )
         self._conn.commit()
 
-    def get_bookmarks(self, limit=100):
-        return self._conn.execute(
-            "SELECT source_text, translated_text, created_at "
-            "FROM bookmarks ORDER BY created_at DESC LIMIT ?",
-            (limit,),
-        ).fetchall()
+    def get_bookmarks(self, limit=500, date=None):
+        if date:
+            rows = self._conn.execute(
+                "SELECT source_text, translated_text, created_at "
+                "FROM bookmarks WHERE date(created_at) = ? "
+                "ORDER BY created_at DESC LIMIT ?",
+                (date, limit),
+            ).fetchall()
+        else:
+            rows = self._conn.execute(
+                "SELECT source_text, translated_text, created_at "
+                "FROM bookmarks ORDER BY created_at DESC LIMIT ?",
+                (limit,),
+            ).fetchall()
+        return rows
+
+    def get_bookmark_dates(self):
+        return [
+            row[0]
+            for row in self._conn.execute(
+                "SELECT DISTINCT date(created_at) FROM bookmarks "
+                "ORDER BY date(created_at) DESC"
+            ).fetchall()
+        ]
 
     def close(self):
         self._conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")

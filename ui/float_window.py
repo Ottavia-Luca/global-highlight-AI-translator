@@ -1,8 +1,4 @@
-import ctypes
-import json
 import time
-from datetime import datetime
-from pathlib import Path
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
     QScrollArea, QApplication,
@@ -10,26 +6,14 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import Qt, QTimer, pyqtSignal, QPoint
 from PyQt6.QtGui import QFont, QCursor
 
-GWL_EXSTYLE = -20
-WS_EX_NOACTIVATE = 0x08000000
-WS_EX_TOOLWINDOW = 0x00000080
-WS_EX_TOPMOST = 0x00000008
-
-VK_LBUTTON = 0x01
-
-user32 = ctypes.windll.user32
-user32.GetAsyncKeyState.argtypes = [ctypes.c_int]
-user32.GetAsyncKeyState.restype = ctypes.c_short
-user32.GetWindowLongW.argtypes = [ctypes.c_void_p, ctypes.c_int]
-user32.GetWindowLongW.restype = ctypes.c_long
-user32.SetWindowLongW.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.c_long]
-user32.SetWindowLongW.restype = ctypes.c_long
+from core.win32_utils import (
+    GWL_EXSTYLE, WS_EX_NOACTIVATE, WS_EX_TOOLWINDOW, WS_EX_TOPMOST,
+    VK_LBUTTON, user32,
+)
 
 FLOAT_WIDTH = 250
 FLOAT_MIN_HEIGHT = 66
 FLOAT_MAX_HEIGHT = 320
-BOOKMARK_FILE = Path(__file__).parent.parent / "data" / "bookmarks.json"
-
 STYLE = """
 FloatWindow {
     background: #1c234a;
@@ -242,31 +226,8 @@ class FloatWindow(QWidget):
     def _on_bookmark(self):
         if self._source_text and self._full_text:
             self.bookmark_requested.emit(self._source_text, self._full_text)
-            _write_bookmark(self._source_text, self._full_text)
             self._bookmark_btn.setText("★ 已收藏")
             QTimer.singleShot(1500, lambda: self._bookmark_btn.setText("收藏"))
-
-
-def _write_bookmark(source, translated):
-    try:
-        BOOKMARK_FILE.parent.mkdir(parents=True, exist_ok=True)
-        records = []
-        if BOOKMARK_FILE.exists():
-            try:
-                records = json.loads(BOOKMARK_FILE.read_text(encoding="utf-8"))
-            except (json.JSONDecodeError, UnicodeDecodeError):
-                records = []
-        records.append({
-            "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "source": source,
-            "translated": translated,
-        })
-        BOOKMARK_FILE.write_text(
-            json.dumps(records, ensure_ascii=False, indent=2),
-            encoding="utf-8",
-        )
-    except OSError:
-        pass
 
 
 def _clamp_to_screen(x, y, width, height):
