@@ -137,7 +137,7 @@ def main():
     overlay.hovered.connect(on_hovered)
 
     def on_float_hidden():
-        translator._pending_text = None
+        translator.cancel()
 
     float_win.hidden.connect(on_float_hidden)
 
@@ -147,9 +147,11 @@ def main():
 
     tray.toggle_requested.connect(on_toggle)
 
-    float_win.bookmark_requested.connect(
-        lambda s, t: cache.save_bookmark(s, t)
-    )
+    def on_bookmark_saved(source, translated):
+        cache.save_bookmark(source, translated)
+        log.info("[收藏] %s", source[:80])
+
+    float_win.bookmark_requested.connect(on_bookmark_saved)
 
     def on_settings():
         dlg = SettingsDialog(config)

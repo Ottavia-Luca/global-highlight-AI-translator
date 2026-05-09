@@ -32,17 +32,23 @@ QScrollArea {
     background: #161e40;
 }
 QScrollBar:vertical {
-    width: 4px;
+    width: 8px;
     background: transparent;
-    margin: 2px;
+    margin: 2px 1px 2px 0;
 }
 QScrollBar::handle:vertical {
     background: #4e58b0;
-    border-radius: 2px;
-    min-height: 16px;
+    border-radius: 3px;
+    min-height: 24px;
+}
+QScrollBar::handle:vertical:hover {
+    background: #6976e4;
 }
 QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
     height: 0;
+}
+QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
+    background: transparent;
 }
 QPushButton#copy_btn {
     background: #222c56;
@@ -199,6 +205,7 @@ class FloatWindow(QWidget):
     def _do_hide(self):
         self._click_check_timer.stop()
         self._lbutton_was_down = False
+        self._full_text = ""
         self.hide()
         self.hidden.emit()
 
