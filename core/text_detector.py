@@ -113,9 +113,10 @@ class TextDetector(QObject):
             _log.info("[钩子] 检测到划选 pos=(%d,%d)", x, y)
             clipboard = QApplication.clipboard()
             old_text = clipboard.text()
+            # Ctrl+Insert 而非 Ctrl+C：终端中 Ctrl+C 会发送中断信号并清除选中文字
             user32.keybd_event(0x11, 0, 0, 0)
-            user32.keybd_event(0x43, 0, 0, 0)
-            user32.keybd_event(0x43, 0, 2, 0)
+            user32.keybd_event(0x2D, 0, 0, 0)
+            user32.keybd_event(0x2D, 0, 2, 0)
             user32.keybd_event(0x11, 0, 2, 0)
             self._poll_clipboard(old_text, 0)
 
