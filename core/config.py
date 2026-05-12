@@ -87,4 +87,4 @@ class Config(QObject):
 
     @property
     def hover_delay(self):
-        return int(self._get("DEEPSEEK_UI_HOVER_DELAY", "200"))
+        return int(self._get("DEEPSEEK_UI_HOVER_DELAY", "600"))

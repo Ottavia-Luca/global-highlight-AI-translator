@@ -48,12 +48,14 @@ def _mouse_hook_callback(nCode, wParam, lParam):
             dy = p.pt.y - inst._mouse_down_pos[1]
             if abs(dx) > 5 or abs(dy) > 5:
                 inst._selection_detected = True
+                inst._is_double_click = False
             else:
                 now = time.time()
                 if now - inst._last_up_time < 0.5:
                     dist = abs(p.pt.x - inst._last_up_pos[0]) + abs(p.pt.y - inst._last_up_pos[1])
                     if dist < 20:
                         inst._selection_detected = True
+                        inst._is_double_click = True
                 inst._last_up_time = now
                 inst._last_up_pos = (p.pt.x, p.pt.y)
             inst._mouse_down_valid = False
@@ -71,6 +73,7 @@ class TextDetector(QObject):
         self._last_up_time = 0.0
         self._last_up_pos = (0, 0)
         self._selection_detected = False
+        self._is_double_click = False
         self._hook_handle = None
         self._poll_timer = QTimer(self)
         self._poll_timer.setInterval(100)
@@ -110,7 +113,8 @@ class TextDetector(QObject):
         if self._selection_detected and self._enabled:
             self._selection_detected = False
             x, y = self._mouse_down_pos
-            _log.info("[钩子] 检测到划选 pos=(%d,%d)", x, y)
+            action = "双击" if self._is_double_click else "划选"
+            _log.info("[钩子] 检测到%s pos=(%d,%d)", action, x, y)
             clipboard = QApplication.clipboard()
             old_text = clipboard.text()
             # Ctrl+Insert 而非 Ctrl+C：终端中 Ctrl+C 会发送中断信号并清除选中文字
