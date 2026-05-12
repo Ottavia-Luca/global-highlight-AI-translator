@@ -18,8 +18,9 @@ for _d in [
     if os.path.isdir(_d):
         os.add_dll_directory(_d)
 
+import keyboard
 from PyQt6.QtWidgets import QApplication
-from PyQt6.QtCore import Qt, QTimer
+from PyQt6.QtCore import Qt, QTimer, QObject, pyqtSignal
 from PyQt6.QtGui import QCursor
 
 from core.config import Config
@@ -85,6 +86,14 @@ def main():
         max_height=config.float_window_max_height,
     )
     text_detector = TextDetector()
+
+    # 全局快捷键 Alt+T 开关翻译
+    class _HotkeyBridge(QObject):
+        triggered = pyqtSignal()
+
+    _hotkey_bridge = _HotkeyBridge()
+    _hotkey_bridge.triggered.connect(lambda: tray._on_toggle())
+    keyboard.add_hotkey('alt+t', _hotkey_bridge.triggered.emit)
 
     # --- 信号连接 ---
 
