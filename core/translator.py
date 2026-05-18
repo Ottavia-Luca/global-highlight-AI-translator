@@ -147,6 +147,7 @@ class TranslatorService(QThread):
             ],
             "stream": True,
             "max_tokens": self._max_tokens,
+            "temperature": 0,
         }
         headers = {
             "Authorization": f"Bearer {self._api_key}",
